@@ -1,0 +1,6 @@
+creation_rules:
+  - path_regex: ^secrets/.*\.(yaml|txt)$
+    age: >-
+      age1dqenkp0fdrrw0mfj222rrh25qwwlzgf0tud2zvmrshctudc5n97swt4ecq
+    pgp: >-
+      30B3D66B945D4F401B63338C0D24BF6D3FBDACB0
