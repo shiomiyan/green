@@ -2,6 +2,7 @@
 
 {
   services.grafana = {
+    # NOTE: Private network use only.
     enable = true;
     provision.datasources.settings = {
       datasources = [
