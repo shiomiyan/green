@@ -16,7 +16,9 @@ let
       enable = true;
       name = "Detect hardcoded secrets";
       description = "Detect hardcoded secrets using Betterleaks";
-      entry = "betterleaks git --pre-commit --redact --staged --no-banner";
+      # Pin the repo config explicitly so pre-commit keeps honoring the local
+      # allowlist even if the hook runs from a different working directory.
+      entry = "betterleaks git --config .betterleaks.toml --pre-commit --redact --staged --no-banner -v";
       language = "system";
       pass_filenames = false;
       stages = [ "pre-commit" ];

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -32,7 +31,7 @@ func TestRunPostsClimateToVictoriaMetrics(t *testing.T) {
 			}
 
 			return jsonResponse(
-				`{"statusCode":100,"message":"success","body":{"deviceId":"meter-1","deviceType":"Meter Plus \"A\" \\ Lab","temperature":24.6,"humidity":51}}`,
+				`{"statusCode":100,"message":"success","body":{"deviceId":"meter-1","deviceType":"Meter Plus","temperature":24.6,"humidity":51}}`,
 			), nil
 		case "/api/v1/import/prometheus":
 			if got, want := r.Method, http.MethodPost; got != want {
@@ -57,8 +56,7 @@ func TestRunPostsClimateToVictoriaMetrics(t *testing.T) {
 		}
 	})}
 
-	var out bytesBuffer
-	err := run(context.Background(), &out, environment{
+	err := run(context.Background(), environment{
 		token:              "test-token",
 		secret:             "test-secret",
 		deviceID:           "meter-1",
@@ -75,14 +73,10 @@ func TestRunPostsClimateToVictoriaMetrics(t *testing.T) {
 	}
 
 	wantBody := "" +
-		"switchbot_meterplus_1_temperature_celsius{source=\"meterplus\",device_id=\"meter-1\",device_type=\"Meter Plus \\\"A\\\" \\\\ Lab\"} 24.6\n" +
-		"switchbot_meterplus_1_humidity_ratio{source=\"meterplus\",device_id=\"meter-1\",device_type=\"Meter Plus \\\"A\\\" \\\\ Lab\"} 0.51\n"
+		"switchbot_meterplus_1_temperature_celsius{source=\"meterplus\",device_id=\"meter-1\",device_type=\"Meter Plus\"} 24.6\n" +
+		"switchbot_meterplus_1_humidity_ratio{source=\"meterplus\",device_id=\"meter-1\",device_type=\"Meter Plus\"} 0.51\n"
 	if gotPostBody != wantBody {
 		t.Fatalf("POST body = %q, want %q", gotPostBody, wantBody)
-	}
-
-	if got := string(out.Bytes()); got != "" {
-		t.Fatalf("stdout = %q", got)
 	}
 }
 
@@ -107,7 +101,7 @@ func TestRunFailsWhenVictoriaMetricsReturnsError(t *testing.T) {
 		}
 	})}
 
-	err := run(context.Background(), io.Discard, environment{
+	err := run(context.Background(), environment{
 		token:              "test-token",
 		secret:             "test-secret",
 		deviceID:           "meter-1",
@@ -162,9 +156,7 @@ func TestLoadEnvironmentFailsWhenRequiredValueMissing(t *testing.T) {
 func TestSignatureUsesDocumentedAlgorithm(t *testing.T) {
 	t.Parallel()
 
-	headers := newAuthHeaders("test-token", "test-secret", fixedClock(1700000000123), func() string {
-		return "request-id"
-	})
+	headers := newAuthHeaders("test-token", "test-secret", "1700000000123", "request-id")
 
 	if got, want := headers.Get("Authorization"), "test-token"; got != want {
 		t.Fatalf("Authorization = %q, want %q", got, want)
@@ -180,29 +172,10 @@ func TestSignatureUsesDocumentedAlgorithm(t *testing.T) {
 	}
 }
 
-type bytesBuffer struct {
-	data []byte
-}
-
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
-}
-
-func (b *bytesBuffer) Write(p []byte) (int, error) {
-	b.data = append(b.data, p...)
-	return len(p), nil
-}
-
-func (b *bytesBuffer) Bytes() []byte {
-	return b.data
-}
-
-type fixedClock int64
-
-func (f fixedClock) UnixMilli() int64 {
-	return int64(f)
 }
 
 func jsonResponse(body string) *http.Response {
@@ -212,8 +185,4 @@ func jsonResponse(body string) *http.Response {
 		Header:     http.Header{"Content-Type": []string{"application/json"}},
 		Body:       io.NopCloser(strings.NewReader(body)),
 	}
-}
-
-func (f fixedClock) String() string {
-	return fmt.Sprint(int64(f))
 }

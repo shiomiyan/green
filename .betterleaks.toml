@@ -1,6 +1,6 @@
 # Keep the host-local Grafana state key in the repo because this machine owns
 # the Grafana data directory and needs a stable key across rebuilds.
 filter = '''
-get(attributes, "path", "") == "nix/hosts/rpi4-01/grafana.nix" &&
-finding["line"] contains "security.secret_key"
+attributes["path"] == "nix/hosts/rpi4-01/grafana.nix" &&
+string(finding["Match"]).contains("security.secret_key")
 '''

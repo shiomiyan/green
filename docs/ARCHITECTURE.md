@@ -65,6 +65,13 @@ architecture-beta
 
 抽象化を入れていない理由は、このリポジトリの目的が「家庭内メトリクスを VictoriaMetrics に入れること」で明確だからです。保存先を切り替える需要がまだない段階では、汎用化より単純さを優先します。
 
+### 5. Grafana
+
+- `nix/hosts/rpi4-01/grafana.nix` が `rpi4-01` の Grafana 設定を定義します。
+- dashboard JSON は `nix/hosts/rpi4-01/grafana/dashboards` に置き、host から provision します。
+
+Grafana を host-local な別ファイルへ切り出している理由は、dashboard も設定も現時点では `rpi4-01` 専用資産だからです。共有 module に上げる前に、まず host 内で関心を分けたほうが KISS/YAGNI に合い、未使用の抽象化を増やさずに済みます。
+
 ## アプリケーション内部
 
 ```mermaid

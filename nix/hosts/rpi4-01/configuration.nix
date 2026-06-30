@@ -7,6 +7,7 @@ in
 {
   imports = [
     ../../modules/nixos/meterplus-to-victoriametrics.nix
+    ./grafana.nix
   ];
 
   nixpkgs.hostPlatform = "aarch64-linux";
@@ -115,40 +116,6 @@ in
         ];
       }
     ];
-  };
-
-  services.grafana = {
-    enable = true;
-    provision.datasources.settings = {
-      datasources = [
-        {
-          name = "VictoriaMetrics";
-          type = "prometheus";
-          uid = "victoriametrics";
-          isDefault = true;
-          # Query over loopback so dashboards stay usable even if LAN routing changes.
-          url = "http://127.0.0.1:8428";
-          editable = false;
-        }
-      ];
-    };
-    provision.dashboards.settings.providers = [
-      {
-        name = "default";
-        # Keep dashboards declarative so rebuilds recreate the same baseline UI.
-        options.path = ./dashboards;
-      }
-    ];
-    settings = {
-      # Keep the key stable across rebuilds so Grafana can read its own state
-      # without forcing a separate secret distribution path for this host.
-      security.secret_key = "SW2YcwTIb9zpOOhoPsMm";
-      server = {
-        # Bind on the LAN so the dashboard stays usable from other devices.
-        http_addr = "0.0.0.0";
-        http_port = 3000;
-      };
-    };
   };
 
   users = {

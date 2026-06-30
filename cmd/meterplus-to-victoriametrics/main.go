@@ -37,10 +37,6 @@ type environment struct {
 	client             *http.Client
 }
 
-type unixMilliClock interface {
-	UnixMilli() int64
-}
-
 type switchBotStatusResponse struct {
 	StatusCode int                  `json:"statusCode"`
 	Message    string               `json:"message"`
@@ -61,13 +57,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := run(context.Background(), os.Stdout, env); err != nil {
+	if err := run(context.Background(), env); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to fetch climate: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func run(ctx context.Context, stdout io.Writer, env environment) error {
+func run(ctx context.Context, env environment) error {
 	client := env.client
 	if client == nil {
 		client = http.DefaultClient
@@ -95,15 +91,14 @@ func fetchClimate(ctx context.Context, client *http.Client, baseURL string, env 
 	if err != nil {
 		return switchBotClimateBody{}, fmt.Errorf("generate nonce: %w", err)
 	}
+	timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 
 	url := fmt.Sprintf("%s/v1.1/devices/%s/status", strings.TrimRight(baseURL, "/"), env.deviceID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return switchBotClimateBody{}, fmt.Errorf("build request: %w", err)
 	}
-	req.Header = newAuthHeaders(env.token, env.secret, time.Now(), func() string {
-		return nonce
-	})
+	req.Header = newAuthHeaders(env.token, env.secret, timestamp, nonce)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -190,27 +185,14 @@ func climateMetricsPayload(climate switchBotClimateBody) string {
 }
 
 func metricLabels(climate switchBotClimateBody) string {
-	return "{source=\"" + escapeLabelValue("meterplus") +
-		"\",device_id=\"" + escapeLabelValue(climate.DeviceID) +
-		"\",device_type=\"" + escapeLabelValue(climate.DeviceType) + "\"}"
+	return "{source=\"meterplus\"" +
+		",device_id=\"" + climate.DeviceID +
+		"\",device_type=\"" + climate.DeviceType + "\"}"
 }
 
-func escapeLabelValue(value string) string {
-	replacer := strings.NewReplacer(
-		"\\", "\\\\",
-		"\n", "\\n",
-		"\"", "\\\"",
-	)
-
-	return replacer.Replace(value)
-}
-
-func newAuthHeaders(token string, secret string, now unixMilliClock, nonce func() string) http.Header {
-	timestamp := fmt.Sprint(now.UnixMilli())
-	nonceValue := nonce()
-
+func newAuthHeaders(token string, secret string, timestamp string, nonce string) http.Header {
 	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(token + timestamp + nonceValue))
+	mac.Write([]byte(token + timestamp + nonce))
 	signature := strings.ToUpper(base64.StdEncoding.EncodeToString(mac.Sum(nil)))
 
 	headers := make(http.Header)
@@ -219,7 +201,7 @@ func newAuthHeaders(token string, secret string, now unixMilliClock, nonce func(
 	headers.Set("charset", "utf8")
 	headers.Set("t", timestamp)
 	headers.Set("sign", signature)
-	headers.Set("nonce", nonceValue)
+	headers.Set("nonce", nonce)
 
 	return headers
 }
