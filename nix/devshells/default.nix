@@ -7,7 +7,9 @@
 
 let
   git-hooks = inputs.git-hooks.lib.${system};
-  formatter = import ../../formatter.nix { inherit pkgs; };
+  formatter = import ../formatter.nix {
+    inherit inputs pkgs;
+  };
   preCommitCheck = git-hooks.run {
     src = ../..;
     hooks.betterleaks = {

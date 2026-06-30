@@ -11,6 +11,10 @@
       url = "github:cachix/git-hooks.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    treefmt = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     flake-utils.url = "github:numtide/flake-utils";
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -18,8 +22,8 @@
     };
   };
 
-
-  outputs = inputs:
+  outputs =
+    inputs:
     let
       blueprintOutputs = inputs.blueprint {
         inherit inputs;

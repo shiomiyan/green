@@ -54,7 +54,11 @@ in
 
   boot = {
     # kernelPackages = pkgs.linuxKernel.packages.linux_rpi4;
-    initrd.availableKernelModules = [ "xhci_pci" "usbhid" "usb_storage" ];
+    initrd.availableKernelModules = [
+      "xhci_pci"
+      "usbhid"
+      "usb_storage"
+    ];
     loader = {
       grub.enable = false;
       generic-extlinux-compatible.enable = true;
@@ -155,7 +159,10 @@ in
       isNormalUser = true;
       group = user;
       # Let the operator repair WiFi locally with nmtui without editing Nix first.
-      extraGroups = [ "wheel" "networkmanager" ];
+      extraGroups = [
+        "wheel"
+        "networkmanager"
+      ];
       initialPassword = password;
       openssh.authorizedKeys.keys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIsL/08gzz5N0JmhfyeBTOSUG1ObAeYS99u39ScgW3Oj"
